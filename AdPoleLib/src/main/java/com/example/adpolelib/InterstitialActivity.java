@@ -222,10 +222,57 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        isSelfStarted = false;
+    private static void downloadVideo(Context context, String url) {
+        // Enabling database for resume support even after the application is killed:
+        PRDownloader.initialize(context);
+        PRDownloaderConfig config = PRDownloaderConfig.newBuilder()
+                .setDatabaseEnabled(true)
+                .build();
+        PRDownloader.initialize(context, config);
+        int downloadId = PRDownloader.download(url, Utils.getRootDirPath(context), "ad.mp4")
+                .build()
+                .setOnStartOrResumeListener(new OnStartOrResumeListener() {
+                    @Override
+                    public void onStartOrResume() {
+
+                    }
+                })
+                .setOnPauseListener(new OnPauseListener() {
+                    @Override
+                    public void onPause() {
+
+                    }
+                })
+                .setOnCancelListener(new OnCancelListener() {
+                    @Override
+                    public void onCancel() {
+
+                    }
+                })
+                .setOnProgressListener(new OnProgressListener() {
+                    @Override
+                    public void onProgress(Progress progress) {
+                        long progressPercent = progress.currentBytes * 100 / progress.totalBytes;
+                        Log.i(TAG, "Download progress ..." + progressPercent);
+                    }
+                })
+                .start(new OnDownloadListener() {
+                    @Override
+                    public void onDownloadComplete() {
+                        Log.i(TAG, "Download complete ...");
+                        AdPolePrefs.saveString(context, "yes");
+                        isLoaded=true;
+                        listener.onAdLoaded();
+
+                    }
+
+                    @Override
+                    public void onError(Error error) {
+                        isLoaded=false;
+                        listener.onAdFailedToLoad();
+                    }
+
+                });
     }
 
     private class JSInterface {
