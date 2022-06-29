@@ -68,6 +68,8 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        videoView = new VideoView(this);
+        imageView = new ImageView(this);
         if (!isSelfStarted) {
             Log.e(TAG, "FUNCTION : onCreate => Start activity by calling InterstitialActivity.show()");
             finish();
@@ -82,59 +84,63 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
     private void createAndSetViews() {
         Log.i(TAG, "FUNCTION : createAndSetViews");
         RelativeLayout relativeLayout = new RelativeLayout(this);
-        relativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        relativeLayout.setBackgroundColor(Color.parseColor("#363636"));
+        RelativeLayout.LayoutParams rltvLayout = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        relativeLayout.setLayoutParams(rltvLayout);
+        relativeLayout.setBackgroundColor(Color.parseColor("#000000"));
+        rltvLayout.setMargins(20, 20, 20, 20);
         relativeLayout.setGravity(Gravity.CENTER);
+
         Log.i(TAG, "FUNCTION : createAndSetViews => Relative layout initialized");
+        Log.i(TAG, "createAndSetViews:=> RootDirPath: " + Utils.getRootDirPath(this) + "/ad.mp4");
+        videoView.setVideoPath(Utils.getRootDirPath(this) + "/ad.mp4");
+        LinearLayout.LayoutParams videoViewLp = new LinearLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        videoView.setLayoutParams(videoViewLp);
+        videoView.start();
 
-        loadingPb = new ProgressBar(this);
-        loadingPb.setIndeterminate(true);
-        RelativeLayout.LayoutParams loadingPbLp = new RelativeLayout.LayoutParams(200, 200);
-        loadingPbLp.addRule(RelativeLayout.CENTER_IN_PARENT, relativeLayout.getId());
-        loadingPb.setLayoutParams(loadingPbLp);
-        webView = new WebView(this);
-        LinearLayout.LayoutParams webViewLp = new LinearLayout.LayoutParams(-1, -1);
-        webViewLp.setMargins(40, 40, 40, 40);
-        webView.setLayoutParams(webViewLp);
-        webView.getSettings().setLoadWithOverviewMode(true);
-        webView.getSettings().setUseWideViewPort(true);
-        webView.setVisibility(GONE);
-        webView.getSettings().setDomStorageEnabled(true);
-//        webView.getSettings().setAppCacheEnabled(true);
-        webView.getSettings().setLoadsImagesAutomatically(true);
-        webView.getSettings().setJavaScriptEnabled(true);
-        webView.addJavascriptInterface(new JSInterface(), "SDK");
-        webView.setWebViewClient(new WebViewClient() {
-            public void onPageFinished(WebView view, String url) {
-                Log.i(TAG, "FUNCTION : createAndSetViews => onPageFinished");
-                loadingPb.setVisibility(GONE);
-                webView.setVisibility(VISIBLE);
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                Log.i(TAG, "FUNCTION : createAndSetViews => shouldOverrideUrlLoading");
-                webView.loadUrl(url);
-                return true;
-            }
-
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Log.e(TAG, "FUNCTION : createAndSetViews => Error: " + description);
-                finish();
-            }
-        });
-        webView.getSettings().setJavaScriptEnabled(true);
-        Log.i(TAG, "FUNCTION : createAndSetViews => Web view initialized");
-
+        Log.i(TAG, "FUNCTION : createAndSetViews => VideoView initialized");
         LinearLayout linearLayout = new LinearLayout(this);
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         linearLayout.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
         linearLayout.setGravity(Gravity.CENTER);
-        linearLayout.addView(webView);
+        linearLayout.addView(videoView);
         Log.i(TAG, "FUNCTION : createAndSetViews => Linear layout initialized");
+        linearLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://odin.adwised.com/media/etc/trailer.mp4")));
+                finish();
+            }
+        });
 
-        relativeLayout.addView(loadingPb);
+        imageView.setImageResource(R.drawable.image);
+        RelativeLayout.LayoutParams close = new RelativeLayout.LayoutParams(100, 100);
+        close.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, relativeLayout.getId());
+        close.addRule(RelativeLayout.ALIGN_PARENT_TOP, relativeLayout.getId());
+        close.setMargins(20, 20, 20, 20);
+        imageView.setLayoutParams(close);
+        imageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
+            }
+        });
         relativeLayout.addView(linearLayout);
+        videoView.setOnErrorListener(new MediaPlayer.OnErrorListener() {
+            @Override
+            public boolean onError(MediaPlayer mp, int what, int extra) {
+                finish();
+                return false;
+            }
+        });
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                relativeLayout.addView(imageView);
+
+            }
+        };
+        handler.postDelayed(runnable, 5000);
         setContentView(relativeLayout);
     }
 
