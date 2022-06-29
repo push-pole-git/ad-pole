@@ -275,30 +275,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
                 });
     }
 
-    private class JSInterface {
-        private final String TAG = JSInterface.class.getName();
-
-        @JavascriptInterface
-        public void conversion(String url, String impressionId) {
-            Log.i(TAG, "FUNCTION : conversion");
-            sendConversion(impressionId);
-            if(URLUtil.isValidUrl(url)){
-                Log.i(TAG, "FUNCTION : conversion => is valid URL going to open it");
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-            } else {
-                Log.e(TAG, "FUNCTION : conversion => is NOT valid URL");
-            }
-        }
-
-        @JavascriptInterface
-        public void close() {
-            Log.i(TAG, "FUNCTION : close");
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    finish();
-                }
-            });
-        }
+    public static void setAdPoleLoadDataListener(AdPoleLoadDataListener listener2) {
+        listener = listener2;
     }
 }
