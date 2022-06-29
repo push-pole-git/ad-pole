@@ -35,23 +35,35 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
 
     private static final String TAG = InterstitialActivity.class.getName();
     private static InAppConstants.AdType adType = InAppConstants.AdType.INTERSTITIAL;
-    private WebView webView;
-    private ProgressBar loadingPb;
+    private VideoView videoView;
     private static String adUnitId;
     private static boolean isSelfStarted = false;
     private String creativeId;
     private static boolean isForTest = false;
+    private ImageView imageView;
+    static String url = "https://odin.adwised.com/media/etc/trailer.mp4";
+    private static AdPoleLoadDataListener listener;
+    public static boolean isLoaded = false;
+    private static boolean open = true;
+    private static Context IContext;
 
-    public static void show(Context context, String adUnitId, boolean isForTest) {
-        context.startActivity(new Intent(context, InterstitialActivity.class));
+    public static void show(Context context) {
+        IContext = context;
+        if (isLoad()) {
+            context.startActivity(new Intent(context, InterstitialActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
+    }
+    public static void loadAd(Context context, String adUnitId, boolean isForTest) {
+        downloadVideo(context, url);
         isSelfStarted = true;
         InterstitialActivity.adUnitId = adUnitId;
         adType = InAppConstants.AdType.INTERSTITIAL;
         InterstitialActivity.isForTest = isForTest;
+        IContext = context;
     }
-
-    public static void show(Context context, String adUnitId) {
-        show(context, adUnitId, false);
+    private static boolean isLoad() {
+        isLoaded=Utils.isFilePresent(IContext) && AdPolePrefs.getString(IContext).equals("yes");
+        return isLoaded;
     }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
