@@ -1,25 +1,32 @@
 package com.example.adpolelib;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
-import android.view.ViewGroup;
-import android.webkit.JavascriptInterface;
-import android.webkit.URLUtil;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
+import android.widget.VideoView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.downloader.Error;
+import com.downloader.OnCancelListener;
+import com.downloader.OnDownloadListener;
+import com.downloader.OnPauseListener;
+import com.downloader.OnProgressListener;
+import com.downloader.OnStartOrResumeListener;
+import com.downloader.PRDownloader;
+import com.downloader.PRDownloaderConfig;
+import com.downloader.Progress;
+import com.example.adpolelib.Interfaces.AdPoleLoadDataListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
