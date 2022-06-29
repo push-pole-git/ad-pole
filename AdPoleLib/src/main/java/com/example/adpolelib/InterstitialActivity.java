@@ -65,6 +65,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         isLoaded=Utils.isFilePresent(IContext) && AdPolePrefs.getString(IContext).equals("yes");
         return isLoaded;
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -144,7 +145,6 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         setContentView(relativeLayout);
     }
 
-
     @Override
     public void onSuccess(final String response, InAppConstants.RequestType requestType) {
         Log.i(TAG, "FUNCTION : onSuccess => URL: " + requestType.toString() + " Response: " + response);
@@ -159,28 +159,11 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         }
     }
 
-    private void showImpression(final String response) {
-        Log.i(TAG, "FUNCTION : showImpression");
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                JSONObject jsonResponse = null;
-                try {
-                    jsonResponse = new JSONObject(response);
-                    webView.loadUrl(jsonResponse.getString("bannerUrl"));
-                } catch (JSONException e) {
-                    Log.e(TAG, "FUNCTION : showImpression => Error: " + e.toString());
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
     @Override
     public void onFailure(int statusCode, String response, Throwable throwable, InAppConstants.RequestType requestType) {
         Log.e(TAG, "FUNCTION : onFailure");
         if (throwable != null) {
-            Log.e(TAG, "FUNCTION : onFailure =>  Error: " + throwable.toString());
+            Log.e(TAG, "FUNCTION : onFailure =>  Error: " + throwable);
             throwable.printStackTrace();
         } else {
             Log.e(TAG, "FUNCTION : onFailure => null throwable");
@@ -197,6 +180,32 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isSelfStarted = false;
+        AdPolePrefs.saveString(this, "no");
+        Log.i(TAG, "INSIDE: onDestroy");
+    }
+
+    private void showImpression(final String response) {
+
+        Log.i(TAG, "FUNCTION : showImpression");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                JSONObject jsonResponse = null;
+                try {
+                    jsonResponse = new JSONObject(response);
+                    //videoView.loadUrl(jsonResponse.getString("bannerUrl"));
+                } catch (JSONException e) {
+                    Log.e(TAG, "FUNCTION : showImpression => Error: " + e);
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
     private void sendConversion(String impressionId) {
         Log.i(TAG, "FUNCTION : sendConversion");
         try {
@@ -208,7 +217,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
                     .put("timestamp", System.currentTimeMillis());
             InAppRestClient.sendConversion(jsonObject, this);
         } catch (Exception e) {
-            Log.e(TAG, "FUNCTION : onAdClick => Error: " + e.toString());
+            Log.e(TAG, "FUNCTION : onAdClick => Error: " + e);
             e.printStackTrace();
         }
     }
