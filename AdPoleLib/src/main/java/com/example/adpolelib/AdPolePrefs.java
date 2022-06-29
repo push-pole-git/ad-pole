@@ -1,9 +1,13 @@
 package com.example.adpolelib;
 
+import static android.content.Context.MODE_PRIVATE;
+import static androidx.constraintlayout.widget.Constraints.TAG;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.util.Log;
 
 import java.util.HashMap;
 
@@ -22,6 +26,16 @@ public class AdPolePrefs {
         initializePool();
     }
 
+    public static void saveString(Context context, String isLoad){
+        SharedPreferences.Editor editor = context.getSharedPreferences("CHECK_LOAD", MODE_PRIVATE).edit();
+        editor.putString("isLoad", isLoad);
+        editor.apply();
+    }
+    public static String getString(Context context){
+        SharedPreferences prefs = context.getSharedPreferences("CHECK_LOAD", MODE_PRIVATE);
+        String isLoad = prefs.getString("isLoad", "no");
+        return isLoad;
+    }
     public static void saveString(final String prefsName, final String key, final String value) {
         save(prefsName, key, value);
     }
