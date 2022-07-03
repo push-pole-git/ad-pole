@@ -1,6 +1,9 @@
 package com.example.adpolelib;
 
+import static com.example.adpolelib.AdPoleLog.TAG;
+import static com.example.adpolelib.AdPolePrefs.IS_LOADED;
 import static com.example.adpolelib.AdPolePrefs.PREFS_ADPOLE;
+import static com.example.adpolelib.AdPolePrefs.PREFS_SUBSCRIBE_TOKEN_REPORT;
 import static com.example.adpolelib.AdPolePrefs.PREF_APP_ID;
 import static com.example.adpolelib.RestClientMethods.sendSubscriptionRequest;
 
@@ -9,6 +12,9 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.util.Log;
+
+import com.example.adpolelib.Interfaces.SubscribeUserListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,9 +23,39 @@ public class AdPole {
     static Context appContext;
     private static OsUtils osUtils;
     private static int subscribeAbleStatus;
-    private static String appId;
+    public static String appId;
+    private static SubscribeUserListener listener;
+
+    private static InAppRestClient.InAppResponseHandler responseHandler = new InAppRestClient.InAppResponseHandler() {
+        @Override
+        public void onSuccess(String response, InAppConstants.RequestType requestType) {
+            Log.i(TAG, "FUNCTION : onSuccess");
+            AdPolePrefs.saveBool(PREFS_ADPOLE, PREFS_SUBSCRIBE_TOKEN_REPORT, true);
+            AdPoleLog.log(response);
+            if (listener!=null)
+                listener.success();
+        }
+
+        @Override
+        public void onFailure(int statusCode, String response, Throwable throwable, InAppConstants.RequestType requestType) {
+            Log.e(TAG, "FUNCTION : onFailure");
+            AdPolePrefs.saveBool(PREFS_ADPOLE, PREFS_SUBSCRIBE_TOKEN_REPORT, false);
+            AdPoleLog.log(response);
+            AdPoleLog.catchException(this.getClass().getName(), "error occurred when registering to server.", statusCode, response, throwable);
+            AdPoleLog.log("errors during have registrations via api");
+            if(throwable != null){
+                Log.e(TAG, "FUNCTION : onFailure => Error: " + throwable.toString());
+                throwable.printStackTrace();
+            } else {
+                Log.e(TAG, "FUNCTION : onFailure => Throwable is null");
+            }
+            if (listener!=null)
+                listener.failure();
+        }
+    };
 
     public static void initialize(Context context, String adPoleAppId){
+        //AdPolePrefs.saveBool(PREFS_ADPOLE, IS_LOADED, false);
         appContext = context;
         osUtils = new OsUtils();
         subscribeAbleStatus = osUtils.initializationChecker(context, adPoleAppId);
@@ -52,30 +88,20 @@ public class AdPole {
         }, "OS_REG_USER").start();
     }
 
+
     private static void registerUserTask() throws JSONException {
-
-        JSONObject body = new JSONObject();
-        body.put("AppId", appId);
-        body.put("DeviceId", DeviceInfo.id(appContext));
-        body.put("DeviceBrand", Build.BRAND);
-        body.put("DeviceModel", Build.MODEL);
-        body.put("HostApplicationVersionName", getHostAppVersionName());
-        sendSubscriptionRequest(body);
-    }
-
-    private static String getHostAppVersionName(){
-        try {
-            PackageManager packageManager = appContext.getPackageManager();
-            String packageName = appContext.getPackageName();
-            PackageInfo pInfo = packageManager.getPackageInfo(packageName, 0);
-            return pInfo.versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        return null;
+        String query = "?package_name=" + appContext.getPackageName() + "&app_id=" + appId;
+        InAppRestClient.getApplicationRegister(query, responseHandler);
     }
     protected static void setContext (Context context){
         appContext = context;
+    }
+
+    public static boolean getAdPoleSubRepo(){
+        return AdPolePrefs.getBool(PREFS_ADPOLE, PREFS_SUBSCRIBE_TOKEN_REPORT, false);
+    }
+    public static void setSubscribeAbleStatusListener(SubscribeUserListener listener2) {
+        listener = listener2;
     }
 
 }
