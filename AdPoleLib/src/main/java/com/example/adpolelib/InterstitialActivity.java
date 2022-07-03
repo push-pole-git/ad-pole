@@ -1,5 +1,10 @@
 package com.example.adpolelib;
 
+import static com.example.adpolelib.AdPolePrefs.IS_LOADED;
+import static com.example.adpolelib.AdPolePrefs.PREFS_ADPOLE;
+import static com.example.adpolelib.AdPolePrefs.PREFS_SUBSCRIBE_TOKEN_REPORT;
+import static com.example.adpolelib.AdPolePrefs.PREF_APP_ID;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -10,6 +15,8 @@ import android.os.Handler;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -27,6 +34,8 @@ import com.downloader.PRDownloader;
 import com.downloader.PRDownloaderConfig;
 import com.downloader.Progress;
 import com.example.adpolelib.Interfaces.AdPoleLoadDataListener;
+import com.example.adpolelib.Interfaces.AdUnitListener;
+import com.example.adpolelib.Interfaces.SubscribeUserListener;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,45 +50,111 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
     private String creativeId;
     private static boolean isForTest = false;
     private ImageView imageView;
-    static String url = "https://odin.adwised.com/media/etc/trailer.mp4";
+    private static String displayUrl ;
+    private static String ctaUrl ;
+    private static String adUnitIdCache;
     private static AdPoleLoadDataListener listener;
-    public static boolean isLoaded = false;
+    public static boolean isLoaded;
     private static boolean open = true;
-    private static Context IContext;
+    protected static Context IContext=null;
+    protected static Context appContext;
+    private static AdUnitListener adListener;
 
-    public static void show(Context context) {
-        IContext = context;
-        if (isLoad()) {
-            context.startActivity(new Intent(context, InterstitialActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+    private static InAppRestClient.InAppResponseHandler responseHandler = new InAppRestClient.InAppResponseHandler() {
+        @Override
+        public void onSuccess(String response, InAppConstants.RequestType requestType) {
+            Log.i(TAG, "FUNCTION : onSuccess");
+            try {
+                JSONObject obj = new JSONObject(response);
+                ctaUrl = String.valueOf(obj.get("cta_url"));
+                displayUrl = String.valueOf(obj.get("display_content_url"));
+                adUnitIdCache = String.valueOf(obj.get("ad_unit_id"));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            if (adListener!=null)
+                adListener.success();
+        }
+
+        @Override
+        public void onFailure(int statusCode, String response, Throwable throwable, InAppConstants.RequestType requestType) {
+            Log.e(TAG, "FUNCTION : onFailure");
+            if(throwable != null){
+                Log.e(TAG, "FUNCTION : onFailure => Error: " + throwable.toString());
+                throwable.printStackTrace();
+            } else {
+                Log.e(TAG, "FUNCTION : onFailure => Throwable is null");
+            }
+            if (adListener!=null)
+                adListener.failure();
+        }
+    };
+    public static void init(Context context) {
+        AdPole.setSubscribeAbleStatusListener(new SubscribeUserListener() {
+            @Override
+            public void success() {
+                if(AdPole.getAdPoleSubRepo()) {
+                    isSelfStarted = true;
+                    adType = InAppConstants.AdType.INTERSTITIAL;
+                    IContext = context;
+                    appContext=context;
+                    AdPole.setContext(IContext);
+                    String query = "?package_name=" + appContext.getPackageName() + "&app_id=" + AdPole.appId;
+                    InAppRestClient.getAdUnit(query, responseHandler);
+                }
+            }
+
+            @Override
+            public void failure() {
+
+            }
+        });
+
+    }
+    public static void loadAd() {
+        setAdUnitListener(new AdUnitListener() {
+            @Override
+            public void success() {
+                if(AdPole.getAdPoleSubRepo() && IContext!=null) {
+                    downloadVideo(IContext, displayUrl);
+                }
+            }
+
+            @Override
+            public void failure() {
+            }
+        });
+    }
+    public static void show() {
+        if(IContext!=null) {
+            if (isLoaded()) {
+                IContext.startActivity(new Intent(IContext, InterstitialActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+
         }
     }
-    public static void loadAd(Context context, String adUnitId, boolean isForTest) {
-        downloadVideo(context, url);
-        isSelfStarted = true;
-        InterstitialActivity.adUnitId = adUnitId;
-        adType = InAppConstants.AdType.INTERSTITIAL;
-        InterstitialActivity.isForTest = isForTest;
-        IContext = context;
-    }
-    private static boolean isLoad() {
-        isLoaded=Utils.isFilePresent(IContext) && AdPolePrefs.getString(IContext).equals("yes");
+
+    public static boolean isLoaded() {
+        isLoaded=Utils.isFilePresent(IContext);
+        Log.i(TAG, "isLoaded: "+isLoaded);
         return isLoaded;
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getSupportActionBar().hide();
         videoView = new VideoView(this);
         imageView = new ImageView(this);
-        if (!isSelfStarted) {
+        /*if (!isSelfStarted) {
             Log.e(TAG, "FUNCTION : onCreate => Start activity by calling InterstitialActivity.show()");
             finish();
-        }
+        }*/
 
         createAndSetViews();
-
-        String query = "?AdUnitId=" + adUnitId + "&DeviceId=" + DeviceInfo.id(this) + "&AdType=" + adType.getTypeCode() + (isForTest ? "&testMode=true" : "");
-        InAppRestClient.getImpression(query, this);
     }
 
     private void createAndSetViews() {
@@ -88,7 +163,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         RelativeLayout.LayoutParams rltvLayout = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         relativeLayout.setLayoutParams(rltvLayout);
         relativeLayout.setBackgroundColor(Color.parseColor("#000000"));
-        rltvLayout.setMargins(20, 20, 20, 20);
+        rltvLayout.setMargins(10, 10, 10, 10);
         relativeLayout.setGravity(Gravity.CENTER);
 
         Log.i(TAG, "FUNCTION : createAndSetViews => Relative layout initialized");
@@ -108,7 +183,8 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         linearLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://odin.adwised.com/media/etc/trailer.mp4")));
+                AdPolePrefs.saveBool(PREFS_ADPOLE, IS_LOADED, true);
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(ctaUrl)));
                 finish();
             }
         });
@@ -122,6 +198,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
         imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                AdPolePrefs.saveBool(PREFS_ADPOLE, IS_LOADED, true);
                 finish();
             }
         });
@@ -141,7 +218,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
 
             }
         };
-        handler.postDelayed(runnable, 5000);
+        handler.postDelayed(runnable, 3000);
         setContentView(relativeLayout);
     }
 
@@ -259,17 +336,19 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
                 .start(new OnDownloadListener() {
                     @Override
                     public void onDownloadComplete() {
-                        Log.i(TAG, "Download complete ...");
                         AdPolePrefs.saveString(context, "yes");
+                        AdPolePrefs.saveBool(PREFS_ADPOLE, IS_LOADED, true);
                         isLoaded=true;
-                        listener.onAdLoaded();
+                        if (listener!=null)
+                            listener.onAdLoaded();
 
                     }
 
                     @Override
                     public void onError(Error error) {
                         isLoaded=false;
-                        listener.onAdFailedToLoad();
+                        if (listener!=null)
+                            listener.onAdFailedToLoad();
                     }
 
                 });
@@ -277,5 +356,8 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
 
     public static void setAdPoleLoadDataListener(AdPoleLoadDataListener listener2) {
         listener = listener2;
+    }
+    public static void setAdUnitListener(AdUnitListener listener2) {
+        adListener = listener2;
     }
 }
