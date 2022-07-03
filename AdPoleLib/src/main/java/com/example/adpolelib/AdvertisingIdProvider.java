@@ -6,7 +6,7 @@ import com.example.adpolelib.Interfaces.AdvertisingIdentifierProvider;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 
 
-public class AdvertisingIdProviderGPS implements AdvertisingIdentifierProvider {
+public class AdvertisingIdProvider implements AdvertisingIdentifierProvider {
 
     private static String lastValue;
 
@@ -25,7 +25,6 @@ public class AdvertisingIdProviderGPS implements AdvertisingIdentifierProvider {
 
             return lastValue;
         } catch (Throwable t) {
-            //OneSignal.Log(OneSignal.LOG_LEVEL.INFO, "Error getting Google Ad id: ", t);
         }
 
         return null;

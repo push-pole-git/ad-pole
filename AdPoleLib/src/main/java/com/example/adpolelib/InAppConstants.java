@@ -5,6 +5,8 @@ public class InAppConstants {
     protected enum RequestType {
         Impression,
         Conversion,
+        REGISTER,
+        ADUNIT,
         Conversion_Retry
     }
 

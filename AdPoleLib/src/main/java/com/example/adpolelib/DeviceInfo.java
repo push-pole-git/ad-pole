@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Base64;
 
+import com.downloader.BuildConfig;
 import com.example.adpolelib.Interfaces.AdvertisingIdentifierProvider;
 
 import org.json.JSONArray;
@@ -26,7 +27,7 @@ public class DeviceInfo {
         String packageName = context.getPackageName();
         PackageManager packageManager = context.getPackageManager();
 
-        AdvertisingIdentifierProvider mainAdIdProvider = new AdvertisingIdProviderGPS();
+        AdvertisingIdentifierProvider mainAdIdProvider = new AdvertisingIdProvider();
         OsUtils osUtils = new OsUtils();
 
         JSONObject deviceInfo = new JSONObject();
@@ -105,5 +106,8 @@ public class DeviceInfo {
         }
         return uniqueID;
     }
+    public synchronized static String packageName(Context context) {
 
+        return uniqueID;
+    }
 }
