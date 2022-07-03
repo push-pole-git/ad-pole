@@ -17,6 +17,7 @@ public class AdPolePrefs {
     static final String PREF_SUBSCRIPTION_ID = "PREF_SUBSCRIPTION_ID";
     static final String PREF_TOKEN_ID = "PREF_TOKEN_ID";
     static final String PREF_APP_ID = "PREF_APP_ID";
+    static final String CTA_URL = "PREF_APP_ID";
     static final String PREFS_OS_LAST_SESSION_TIME = "LAST_SESSION_TIME";
     static final String PREFS_GT_VIBRATE_ENABLED = "VIBRATE_ENABLED";
     static final String PREFS_SUBSCRIBE_TOKEN_REPORT = "SUBSCRIBE_TOKEN_REPORT";

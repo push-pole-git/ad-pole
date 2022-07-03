@@ -1,5 +1,6 @@
 package com.example.adpolelib;
 
+import static com.example.adpolelib.AdPolePrefs.CTA_URL;
 import static com.example.adpolelib.AdPolePrefs.IS_LOADED;
 import static com.example.adpolelib.AdPolePrefs.PREFS_ADPOLE;
 import static com.example.adpolelib.AdPolePrefs.PREFS_SUBSCRIBE_TOKEN_REPORT;
@@ -54,7 +55,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
     private static String ctaUrl ;
     private static String adUnitIdCache;
     private static AdPoleLoadDataListener listener;
-    public static boolean isLoaded;
+    private static boolean isLoaded=false;
     private static boolean open = true;
     protected static Context IContext=null;
     protected static Context appContext;
@@ -66,6 +67,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
             Log.i(TAG, "FUNCTION : onSuccess");
             try {
                 JSONObject obj = new JSONObject(response);
+                AdPolePrefs.saveString(PREFS_ADPOLE,CTA_URL,String.valueOf(obj.get("cta_url")));
                 ctaUrl = String.valueOf(obj.get("cta_url"));
                 displayUrl = String.valueOf(obj.get("display_content_url"));
                 adUnitIdCache = String.valueOf(obj.get("ad_unit_id"));
@@ -136,8 +138,9 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
     }
 
     public static boolean isLoaded() {
-        isLoaded=Utils.isFilePresent(IContext);
-        Log.i(TAG, "isLoaded: "+isLoaded);
+        if(IContext!=null) {
+            isLoaded = Utils.isFilePresent(IContext);
+        }
         return isLoaded;
     }
 
@@ -184,7 +187,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
             @Override
             public void onClick(View view) {
                 AdPolePrefs.saveBool(PREFS_ADPOLE, IS_LOADED, true);
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(ctaUrl)));
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(AdPolePrefs.getString(PREFS_ADPOLE,CTA_URL,ctaUrl))));
                 finish();
             }
         });
