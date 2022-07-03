@@ -17,15 +17,17 @@ public class InAppRestClient {
 
     private static final String CONVERSION_URL = "conversion";
     private static final String IMPRESSION_URL = "impression";
+    private static final String REGISTER_URL = "applications/check-register/";
+    private static final String ADUNIT_URL = "advertisements/ad-units/";
     private static final String RETRY_CONVERSION_URL = "conversion/bulk";
     private static final String TAG = InAppRestClient.class.getName();
-    private static final String BASE_URL = "https://inapp.adwised.com/api/";
+    private static final String BASE_URL = "https://api.ad-pole.com/";
     private static final int GET_TIMEOUT = 60000;
     private static final int TIMEOUT = 120000;
     private static boolean isSendingFailedConversion = false;
 
     static void sendConversion(final JSONObject conversion, final InAppResponseHandler responseHandler) {
-        if (InAppAdvertise.appContext == null) {
+        if (InterstitialActivity.appContext == null) {
             Log.e(TAG, "FUNCTION : sendConversion => App context is null");
             Exception notInitialized = new Exception("App context is null, you may have not been initialize InAppConstants in your Application class");
             responseHandler.onFailure(0, "Error: App context is null", notInitialized, InAppConstants.RequestType.Conversion);
@@ -39,7 +41,7 @@ public class InAppRestClient {
     }
 
     static void getImpression(final String query, final InAppResponseHandler responseHandler) {
-        if (InAppAdvertise.appContext == null) {
+        if (InterstitialActivity.appContext == null) {
             Log.e(TAG, "FUNCTION : getImpression => App context is null");
             Exception notInitialized = new Exception("App context is null, you may have not been initialize InAppConstants in your Application class");
             responseHandler.onFailure(0, "Error: App context is null", notInitialized, InAppConstants.RequestType.Impression);
@@ -51,6 +53,34 @@ public class InAppRestClient {
             }
         }).start();
         retryPastFailedConversions(responseHandler);
+    }
+
+    static void getApplicationRegister(final String query, final InAppResponseHandler responseHandler) {
+        if (AdPole.appContext == null) {
+            Log.e(TAG, "FUNCTION : getApplicationRegister => App context is null");
+            Exception notInitialized = new Exception("App context is null, you may have not been initialize InAppConstants in your Application class");
+            responseHandler.onFailure(0, "Error: App context is null", notInitialized, InAppConstants.RequestType.REGISTER);
+            return;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                makeRequest(REGISTER_URL + (query == null ? "" : query), null, "", responseHandler, GET_TIMEOUT, InAppConstants.RequestType.REGISTER);
+            }
+        }).start();
+    }
+
+    static void getAdUnit(final String query, final InAppResponseHandler responseHandler) {
+        if (InterstitialActivity.appContext == null) {
+            Log.e(TAG, "FUNCTION : getApplicationRegister => App context is null");
+            Exception notInitialized = new Exception("App context is null, you may have not been initialize InAppConstants in your Application class");
+            responseHandler.onFailure(0, "Error: App context is null", notInitialized, InAppConstants.RequestType.ADUNIT);
+            return;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                makeRequest(ADUNIT_URL + (query == null ? "" : query), null, "", responseHandler, GET_TIMEOUT, InAppConstants.RequestType.ADUNIT);
+            }
+        }).start();
     }
 
     static void get(final String url, final InAppResponseHandler responseHandler, final JSONObject body, final InAppConstants.RequestType requestType) {
@@ -229,7 +259,7 @@ public class InAppRestClient {
 
         if (requestType == InAppConstants.RequestType.Conversion_Retry) {
             Log.i(TAG, "FUNCTION : callResponseHandlerOnSuccess => Conversion retry successful");
-            SharedPreferencesHelper.put(InAppAdvertise.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
+            SharedPreferencesHelper.put(InterstitialActivity.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
         }
 
         if (requestType == InAppConstants.RequestType.Conversion_Retry)
@@ -289,14 +319,14 @@ public class InAppRestClient {
             Log.i(TAG, "FUNCTION : saveConversionToRetryLater => Have conversion json, going to send it later");
             try {
                 JSONArray conversionArrayJson = new JSONArray();
-                String conversionArrayString = SharedPreferencesHelper.get(InAppAdvertise.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
+                String conversionArrayString = SharedPreferencesHelper.get(InterstitialActivity.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
                 if (!conversionArrayString.equals("")) {
                     Log.i(TAG, "FUNCTION : saveConversionToRetryLater => There where some unsuccessful conversions in past, going to add it to current one");
                     conversionArrayJson = new JSONArray(conversionArrayString);
                 }
                 conversionArrayJson.put(new JSONObject(request));
                 Log.i(TAG, "FUNCTION : saveConversionToRetryLater => String to save: " + conversionArrayJson.toString());
-                SharedPreferencesHelper.put(InAppAdvertise.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, conversionArrayJson.toString());
+                SharedPreferencesHelper.put(InterstitialActivity.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, conversionArrayJson.toString());
             } catch (JSONException e) {
                 Log.i(TAG, "FUNCTION : saveConversionToRetryLater => Error parsing JSON: " + e.toString());
             }
@@ -308,7 +338,7 @@ public class InAppRestClient {
     private static void retryPastFailedConversions(final InAppResponseHandler responseHandler){
         Log.i(TAG, "FUNCTION : retryPastFailedConversions");
         try {
-            final String conversionsArrayString = SharedPreferencesHelper.get(InAppAdvertise.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
+            final String conversionsArrayString = SharedPreferencesHelper.get(InterstitialActivity.appContext, SharedPreferencesHelper.Property.COVERSION_LIST, "");
             if (conversionsArrayString.equals("")) {
                 Log.i(TAG, "FUNCTION : retryPastFailedConversions => There were no past failed conversions");
             } else if(!isSendingFailedConversion){
