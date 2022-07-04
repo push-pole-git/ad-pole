@@ -1,7 +1,25 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.4.2'
+        classpath 'digital.wup:android-maven-publish:3.6.2'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+        classpath 'io.github.gradle-nexus:publish-plugin:1.1.0'
+    }
+}
+
 plugins {
     id 'com.android.library'
 }
-
 android {
     compileSdk 32
 
@@ -24,7 +42,7 @@ android {
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
         }
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             buildConfigField("long", "VERSION_CODE", "${defaultConfig.versionCode}")
             buildConfigField("String", "VERSION_NAME", "\"${defaultConfig.versionName}\"")
@@ -47,3 +65,29 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
 }
+
+task createjavadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    exclude '**/BuildConfig.java'
+    exclude '**/R.java'
+}
+
+
+ext {
+    PUBLISH_GROUP_ID = 'com.push-pole.android'
+    PUBLISH_VERSION = '1.7.4'
+    PUBLISH_ARTIFACT_ID = 'pushpolesdk'
+    PUBLISH_DESCRIPTION = 'Push Pole SDK'
+    PUBLISH_URL = 'https://push-pole.com'
+    PUBLISH_LICENSE_NAME = 'Apache License'
+    PUBLISH_LICENSE_URL = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    PUBLISH_DEVELOPER_ID = 'Push Pole'
+    PUBLISH_DEVELOPER_NAME = 'Push Pole'
+    PUBLISH_DEVELOPER_EMAIL = 'admin@push-pole.com'
+    PUBLISH_SCM_CONNECTION = 'scm:git:github.com/push-pole-git/pole-sdk.git'
+    PUBLISH_SCM_DEVELOPER_CONNECTION = 'scm:git:ssh://github.com/push-pole-git/pole-sdk.git'
+    PUBLISH_SCM_URL = 'https://github.com/push-pole-git/pole-sdk/tree/master'
+}
+
+apply from: "${rootProject.projectDir}/scripts/maven-central-publish-module.gradle"

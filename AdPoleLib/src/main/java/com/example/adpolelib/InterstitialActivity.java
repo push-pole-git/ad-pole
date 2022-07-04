@@ -333,7 +333,7 @@ public class InterstitialActivity extends AppCompatActivity implements InAppRest
                     @Override
                     public void onProgress(Progress progress) {
                         long progressPercent = progress.currentBytes * 100 / progress.totalBytes;
-                        Log.i(TAG, "Download progress ..." + progressPercent);
+                       // Log.i(TAG, "Download progress ..." + progressPercent);
                     }
                 })
                 .start(new OnDownloadListener() {
